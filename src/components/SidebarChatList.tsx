@@ -3,7 +3,7 @@ import { pusherClient } from '@/lib/pusher';
 import { chatHrefConstructor, toPusherKey } from '@/lib/utils';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { FC, useEffect, useRef, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import UnseenChatToast from './UnseenChatToast';
 
@@ -21,7 +21,6 @@ const SidebarChatList: FC<SidebarChatListProps> = ({ friends, sessionId }) => {
   const router = useRouter();
   const pathname = usePathname();
   const [unseenMessages, setUnseenMessages] = useState<Message[]>([]);
-  const toastIdRef = useRef<string | undefined>();
 
   useEffect(() => {
     pusherClient.subscribe(toPusherKey(`user:${sessionId}:chats`));
@@ -36,10 +35,10 @@ const SidebarChatList: FC<SidebarChatListProps> = ({ friends, sessionId }) => {
         pathname !==
         `/dashboard/chat/${chatHrefConstructor(sessionId, message.senderId)}`;
 
-      if (!shouldNotify || toastIdRef.current) return;
+      if (!shouldNotify) return;
 
       // should be notified
-      const toastId = toast.custom((t) => (
+      toast.custom((t) => (
         <UnseenChatToast
           t={t}
           sessionId={sessionId}
@@ -50,7 +49,6 @@ const SidebarChatList: FC<SidebarChatListProps> = ({ friends, sessionId }) => {
         />
       ));
 
-      toastIdRef.current = toastId;
       setUnseenMessages((prev) => [...prev, message]);
     };
 
@@ -60,8 +58,9 @@ const SidebarChatList: FC<SidebarChatListProps> = ({ friends, sessionId }) => {
     return () => {
       pusherClient.unsubscribe(toPusherKey(`user:${sessionId}:chats`));
       pusherClient.unsubscribe(toPusherKey(`user:${sessionId}:friends`));
-      toast.dismiss(toastIdRef.current);
-      toastIdRef.current = undefined;
+
+      pusherClient.unbind('new_message', chatHandler);
+      pusherClient.unbind('new_friend', newFriendHandler);
     };
   }, [pathname, router, sessionId]);
 
