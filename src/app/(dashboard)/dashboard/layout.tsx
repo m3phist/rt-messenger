@@ -17,6 +17,11 @@ interface LayoutProps {
   children: ReactNode;
 }
 
+export const metadata = {
+  title: 'Onlytext | Dashboard',
+  description: 'Your dashboard',
+};
+
 const sideBarOptions: SideBarOption[] = [
   {
     id: 1,
